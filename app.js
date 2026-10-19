@@ -14,24 +14,35 @@ const nviews=c=>`<span class="tv" data-tv="${c.id}" title="${viewsTip(c)}">${tot
 const trendOf=c=>Math.round(totalViews(c)/Math.max(c.age_days||1,1));
 const embed=(c,best)=>c.embed?`<div class="embed-wrap">${best?'<span class="badge best">★ Best clip</span>':''}<iframe src="${c.embed}${c.platform=="YouTube"?"?rel=0&modestbranding=1":""}" title="${esc0(c.song)} — ${c.platform} embed" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>`:thumb(c,best);
 const showCard=s=>`<a class="card" href="#/show/${s.id}">${thumb(s.best,1)}<div class="meta"><b>${s.artist.name}</b><span class="mut">${s.venue} · ${s.city}</span><br><span class="mut">${fmt(s.date)}</span> · ${credit(s.best)}</div></a>`;
-const artistChip=a=>`<a class="chip" href="#/artist/${a.id}" style="border-color:hsl(${a.hue} 80% 55%)">${a.name}</a>`;
+const artistAvatar=(a,size=28)=>a.thumb?`<img class="aav" src="${esc0(a.thumb)}" alt="" referrerpolicy="no-referrer" width="${size}" height="${size}" loading="lazy" style="width:${size}px;height:${size}px" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'aav ini',style:'width:${size}px;height:${size}px;font-size:${Math.round(size*.45)}px;background:hsl(${a.hue} 70% 40%)',textContent:'${esc0(a.name[0])}'}))">`:`<span class="aav ini" style="width:${size}px;height:${size}px;font-size:${Math.round(size*.45)}px;background:linear-gradient(135deg,hsl(${a.hue} 80% 50%),hsl(${(a.hue+60)%360} 70% 25%))">${esc0(a.name.replace(/^The /,"")[0])}</span>`;
+const artistChip=a=>`<a class="chip achip" href="#/artist/${a.id}" style="border-color:hsl(${a.hue} 80% 55%)">${artistAvatar(a,26)}${esc0(a.name)}</a>`;
+const HAS30=typeof HIST_DAYS!="undefined"&&HIST_DAYS>=28;
+const site30=c=>{const r=window.SSB&&SSB.remoteTotals&&SSB.remoteTotals[c.id];return r&&r.site_30d!=null?Number(r.site_30d):0};
+const gain30=c=>(c.views_30d||0)+site30(c);
+const recentPool=()=>{const p=ALL_CLIPS.filter(c=>(c.age_days||999)<=30);return p.length?p:ALL_CLIPS};
+const MV_TIP=HAS30?"Most views gained over the last 30 days: YouTube views now minus ~30 days ago (daily snapshots) + Showstopper plays in the last 30 days."
+ :`Not enough history yet (${typeof HIST_DAYS!="undefined"?HIST_DAYS:0} of 30 days of daily view snapshots). Until then: clips uploaded in the last 30 days, ranked by total views.`;
+const rank30=list=>HAS30?[...list].sort((x,y)=>gain30(y)-gain30(x)):[...list].sort((x,y)=>totalViews(y)-totalViews(x));
+const artistRow=a=>{const sh=SHOWS.filter(s=>s.artist==a);return `<a class="arow" href="#/artist/${a.id}">${artistAvatar(a,52)}<div><b>${esc0(a.name)}</b><span class="mut">${esc0(a.genre)} · ${sh.length} show${sh.length==1?"":"s"}${sh[0]?` · latest ${fmt(sh[0].date)}${sh[0].city?", "+esc0(sh[0].city):""}`:""}</span></div><span class="mut">→</span></a>`};
+function pager(el,items,render,per=30){let n=0;const more=document.createElement("button");more.className="btn ghost more";
+ const draw=()=>{el.insertAdjacentHTML("beforeend",items.slice(n,n+per).map(render).join(""));n+=per;more.style.display=n<items.length?"":"none";more.textContent=`Show more (${items.length-n} left)`;window.SOC&&SOC.after&&0};
+ el.innerHTML=items.length?"":'<p class="empty">No matches.</p>';el.after(more);more.onclick=draw;draw();return more}
 function home(){let now=new Date();if(!ALL_CLIPS.some(c=>c.date.getMonth()==now.getMonth()&&c.date.getFullYear()==now.getFullYear()))now=new Date(Math.max(...ALL_CLIPS.map(c=>c.date)));const mo=now.toLocaleDateString("en-US",{month:"long",year:"numeric"});
-const month=ALL_CLIPS.filter(c=>c.date.getMonth()==now.getMonth()&&c.date.getFullYear()==now.getFullYear());
-const top=month.reduce((m,c)=>totalViews(c)>totalViews(m)?c:m,month[0]);
+const top=rank30(HAS30?ALL_CLIPS:recentPool())[0];
 const arts=[...ARTISTS].sort((x,y)=>x.name.localeCompare(y.name)),groups={};arts.forEach(a=>{const L=a.name.replace(/^The /,"")[0];(groups[L]=groups[L]||[]).push(a)});
 const genres=[...new Set(ARTISTS.map(a=>a.genre))].sort();
-const trend=[...ALL_CLIPS].sort((x,y)=>trendOf(y)-trendOf(x)).slice(0,8);
-app.innerHTML=`<section class="hero mv"><p class="eyebrow">Most Viewed Clip of the Month</p>
-<a class="mv-card" href="#/show/${top.showId}"><div class="player">${thumb(top,0)}<span class="mv-badge">#1 Most Viewed · ${mo}</span></div>
-<div class="mv-info"><h1>${top.artist.name}</h1><p class="mv-song">“${esc0(top.song)}” · <b>${nviews(top)} total views</b></p><p class="vbreak" data-tvb="${top.id}">${viewsTip(top)}</p>
+const trend=rank30(HAS30?ALL_CLIPS:recentPool()).filter(c=>c!=top).slice(0,8);
+app.innerHTML=`<section class="hero mv"><p class="eyebrow">Most Viewed Clip of the Month <span class="tip" tabindex="0" title="${esc0(MV_TIP)}" aria-label="${esc0(MV_TIP)}">ⓘ</span></p>
+<a class="mv-card" href="#/show/${top.showId}"><div class="player">${thumb(top,0)}<span class="mv-badge">#1 Most Viewed · ${HAS30?"last 30 days":mo}</span></div>
+<div class="mv-info"><h1>${top.artist.name}</h1><p class="mv-song">“${esc0(top.song)}” · <b>${HAS30?`+${gain30(top).toLocaleString("en-US")} views in 30 days`:`${nviews(top)} total views`}</b></p><p class="vbreak" data-tvb="${top.id}">${viewsTip(top)}</p>
 <p>${top.venue} · ${top.city} · ${fmt(top.date)}</p><p>${credit(top)}</p><span class="btn">Watch the show →</span></div></a></section>
-<h2>Artists A–Z</h2><div class="az">${Object.keys(groups).sort().map(L=>`<div class="az-g"><span class="az-l">${L}</span><div class="chips">${groups[L].map(artistChip).join("")}</div></div>`).join("")}</div>
-<h2>Genres A–Z</h2><div class="chips">${genres.map(g=>`<a class="chip" href="#/browse/${encodeURIComponent(g)}">${g}</a>`).join("")}</div>
-<div id="ad-home"></div><h2>Trending Now <span class="mut" style="font-size:15px;font-weight:400">· trend = total views (YouTube + Showstopper) per day since upload</span></h2>
-<div class="grid">${trend.map((c,i)=>`<a class="card" data-clip="${c.id}" href="#/show/${c.showId}">${thumb(c)}<div class="meta"><b>#${i+1} ${c.artist.name}</b><span class="mut">“${esc0(c.song)}” · ${c.city}</span><br><span class="trend">▲ ${trendOf(c).toLocaleString("en-US")}/day</span> ${credit(c)}</div></a>`).join("")}</div>`;}
+<h2>Artists A–Z <a class="mut small" style="font-weight:400" href="#/artists">· search all ${ARTISTS.length} artists →</a></h2><div class="az">${Object.keys(groups).sort().map(L=>`<div class="az-g"><span class="az-l">${L}</span><div class="chips">${groups[L].map(artistChip).join("")}</div></div>`).join("")}</div>
+<h2>Genres A–Z</h2><div class="chips">${genres.map(g=>`<a class="chip" href="#/genre/${encodeURIComponent(g)}">${g} <span class="mut">${ARTISTS.filter(a=>a.genre==g).length}</span></a>`).join("")}</div>
+<div id="ad-home"></div><h2>Trending Now <span class="mut" style="font-size:15px;font-weight:400">· ${HAS30?"most views gained in the last 30 days":"uploaded in the last 30 days, by total views"} <span class="tip" tabindex="0" title="${esc0(MV_TIP)}">ⓘ</span></span></h2>
+<div class="grid">${trend.map((c,i)=>`<a class="card" data-clip="${c.id}" href="#/show/${c.showId}">${thumb(c)}<div class="meta"><b>#${i+1} ${c.artist.name}</b><span class="mut">“${esc0(c.song)}” · ${c.city}</span><br><span class="trend">${HAS30?`▲ +${gain30(c).toLocaleString("en-US")} / 30d`:`${nviews(c)} views`}</span> ${credit(c)}</div></a>`).join("")}</div>`;}
 function artist(id){const a=ARTISTS.find(x=>x.id==id);if(!a)return home();const list=SHOWS.filter(s=>s.artist==a);
 const cities=[...new Set(list.map(s=>s.city))];
-app.innerHTML=`<div class="ahead"><div class="avatar" style="${grad(a.hue)}"></div><div><span class="mut">${a.genre}</span><h1>${a.name}</h1><p class="mut">${list.length} recent shows · ${list.reduce((n,s)=>n+s.clips.length,0)} fan clips indexed</p><button class="btn" id="fb"></button></div></div>
+app.innerHTML=`<div class="ahead">${artistAvatar(a,120).replace('class="aav','class="aav big')}<div><span class="mut">${a.genre}</span><h1>${a.name}</h1>${a.thumb_credit?`<p class="mut small credit">${a.thumb_credit_url?`<a href="${esc0(a.thumb_credit_url)}" target="_blank" rel="noopener">${esc0(a.thumb_credit)}</a>`:esc0(a.thumb_credit)}</p>`:""}<p class="mut">${list.length} recent shows · ${list.reduce((n,s)=>n+s.clips.length,0)} fan clips indexed</p><button class="btn" id="fb"></button></div></div>
 <h2>Recent shows</h2><div class="filters"><select id="fc"><option value="">All cities</option>${cities.map(c=>`<option>${c}</option>`).join("")}</select><select id="fs"><option value="new">Newest first</option><option value="old">Oldest first</option><option value="clips">Most clips</option></select></div><div id="sl"></div>`;
 const fb=$("#fb"),upd=()=>{fb.textContent=follows.has(id)?"✓ Following":"+ Follow";fb.className=follows.has(id)?"btn ghost":"btn"};upd();
 fb.onclick=()=>{follows.has(id)?follows.delete(id):follows.add(id);localStorage.setItem("ssf",JSON.stringify([...follows]));upd()};
@@ -50,9 +61,15 @@ function browse(pre){const g=[...new Set(ARTISTS.map(a=>a.genre))],c=[...new Set
 app.innerHTML=`<h1>Browse shows</h1><div class="filters"><select id="bg"><option value="">All genres</option>${g.map(x=>`<option>${x}</option>`)}</select><select id="bc"><option value="">All cities</option>${c.map(x=>`<option>${x}</option>`)}</select>
 <label class="mut">From <input type="date" id="b1"></label><label class="mut">To <input type="date" id="b2"></label></div><p class="mut" id="bn"></p><div class="grid" id="bl"></div>`;
 const draw=()=>{const l=SHOWS.filter(s=>(!bg.value||s.artist.genre==bg.value)&&(!bc.value||s.city==bc.value)&&(!b1.value||iso(s.date)>=b1.value)&&(!b2.value||iso(s.date)<=b2.value));
- $("#bn").textContent=l.length+" shows";$("#bl").innerHTML=l.map(showCard).join("")||'<p class="empty">No shows match these filters.</p>'};
+ $("#bn").textContent=l.length+" shows";document.querySelectorAll("#app .more").forEach(b=>b.remove());pager($("#bl"),l,showCard,24);window.SOC&&SOC.after("browse")};
 if(pre)bg.value=decodeURIComponent(pre);["bg","bc","b1","b2"].forEach(i=>$("#"+i).oninput=draw);draw();}
+function artistsPage(g,q0){const gl=g?decodeURIComponent(g):"",pool=[...ARTISTS].filter(a=>!gl||a.genre==gl).sort((x,y)=>x.name.localeCompare(y.name));
+ app.innerHTML=`<p class="mut">${gl?'<a href="#/">← Home</a>':""}</p><h1>${gl?esc0(gl):"All artists"} <span class="mut" style="font-size:.45em">${pool.length} artist${pool.length==1?"":"s"}</span></h1>
+ <div class="search asearch"><input id="aq" type="search" placeholder="Search ${gl?esc0(gl)+" ":""}artists by name…" aria-label="Search artists" autocomplete="off" value="${esc0(q0||"")}"></div><div class="alist" id="al"></div>
+ ${gl?`<h2>Recent ${esc0(gl)} shows</h2><div class="grid" id="gs"></div>`:""}`;
+ const f=$("#aq"),draw=()=>{const t=f.value.trim().toLowerCase();document.querySelectorAll("#app .alist + .more").forEach(b=>b.remove());pager($("#al"),pool.filter(a=>!t||a.name.toLowerCase().includes(t)),artistRow,30)};
+ f.oninput=draw;draw();if(gl){pager($("#gs"),SHOWS.filter(s=>s.artist.genre==gl),showCard,12)}if(!q0)f.focus({preventScroll:true});else{f.focus();f.setSelectionRange(f.value.length,f.value.length)}}
 function route(){const [,p,id]=location.hash.split("/");window.scrollTo(0,0);
  if(window.SOC&&SOC.route(p,id))return SOC.after(p,id);
- p=="artist"?artist(id):p=="show"?show(id):p=="browse"?browse(id):home();window.SOC&&SOC.after(p,id);}
+ p=="artist"?artist(id):p=="show"?show(id):p=="browse"?browse(id):p=="genre"?artistsPage(id):p=="artists"?artistsPage("",decodeURIComponent(id||"")):home();window.SOC&&SOC.after(p,id);}
 addEventListener("hashchange",route);route();

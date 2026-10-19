@@ -17,7 +17,8 @@ window.SSB=(()=>{const api={enabled:false,ready:null,status:"off",user:null};
  api.recordPlay=async(clipId)=>{if(!api.enabled)return;const {data,error}=await sb.rpc("increment_play",{p_clip_id:clipId});if(error){console.warn("[SSB] play",error.message);return}
    remoteTotals[clipId]=Object.assign(remoteTotals[clipId]||{},{site_views:data});window.SOC&&SOC.refreshViewLabels(clipId);return data};
  api.loadTotals=async(ids)=>{if(!api.enabled||!ids.length)return;const {data,error}=await sb.rpc("clip_view_totals",{p_ids:ids});if(error)return;
-   data.forEach(r=>{remoteTotals[r.clip_id]=r;window.SOC&&SOC.refreshViewLabels(r.clip_id)})};
+   data.forEach(r=>{remoteTotals[r.clip_id]=Object.assign(remoteTotals[r.clip_id]||{},r);window.SOC&&SOC.refreshViewLabels(r.clip_id)});
+   if(typeof HIST_DAYS=="undefined"||HIST_DAYS<28)return;const g=await sb.rpc("clip_views_30d",{p_ids:ids});if(!g.error)g.data.forEach(r=>{remoteTotals[r.clip_id]=Object.assign(remoteTotals[r.clip_id]||{},{site_30d:r.site_plays_30d})})};
  api.sitePlays=id=>remoteTotals[id]?Number(remoteTotals[id].site_views):null;
  api.track=async(artistId,on)=>{need();const q=sb.from("follows");const {error}=on?await q.insert({user_id:api.user.id,artist_id:artistId}):await q.delete().eq("user_id",api.user.id).eq("artist_id",artistId);if(error&&error.code!="23505")throw error};
  api.saveToList=async(listName,clipId,on)=>{need();let {data:l}=await sb.from("lists").select("id").eq("user_id",api.user.id).eq("name",listName).maybeSingle();
