@@ -7,4 +7,5 @@ License: Unsplash License — https://unsplash.com/license (free for commercial 
 File: stage.webp (downloaded and stored locally, 1920px WebP, not hotlinked)
 
 Crowd silhouette layer: original inline SVG drawn for this project.
-All artists, venues, and clips on the site are fictional example data.
+Show and clip data: public metadata from the YouTube Data API and the Internet Archive (archive.org).
+Videos play only through each platform's official embed and are never rehosted. Credit and links go to the original uploaders.

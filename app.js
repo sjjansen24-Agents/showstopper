@@ -15,7 +15,7 @@ const trendOf=c=>Math.round(totalViews(c)/Math.max(c.age_days||1,1));
 const embed=(c,best)=>c.embed?`<div class="embed-wrap">${best?'<span class="badge best">★ Best clip</span>':''}<iframe src="${c.embed}${c.platform=="YouTube"?"?rel=0&modestbranding=1":""}" title="${esc0(c.song)} — ${c.platform} embed" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>`:thumb(c,best);
 const showCard=s=>`<a class="card" href="#/show/${s.id}">${thumb(s.best,1)}<div class="meta"><b>${s.artist.name}</b><span class="mut">${s.venue} · ${s.city}</span><br><span class="mut">${fmt(s.date)}</span> · ${credit(s.best)}</div></a>`;
 const artistChip=a=>`<a class="chip" href="#/artist/${a.id}" style="border-color:hsl(${a.hue} 80% 55%)">${a.name}</a>`;
-function home(){const now=new Date(2026,9,19),mo=now.toLocaleDateString("en-US",{month:"long",year:"numeric"});
+function home(){let now=new Date();if(!ALL_CLIPS.some(c=>c.date.getMonth()==now.getMonth()&&c.date.getFullYear()==now.getFullYear()))now=new Date(Math.max(...ALL_CLIPS.map(c=>c.date)));const mo=now.toLocaleDateString("en-US",{month:"long",year:"numeric"});
 const month=ALL_CLIPS.filter(c=>c.date.getMonth()==now.getMonth()&&c.date.getFullYear()==now.getFullYear());
 const top=month.reduce((m,c)=>totalViews(c)>totalViews(m)?c:m,month[0]);
 const arts=[...ARTISTS].sort((x,y)=>x.name.localeCompare(y.name)),groups={};arts.forEach(a=>{const L=a.name.replace(/^The /,"")[0];(groups[L]=groups[L]||[]).push(a)});
@@ -31,7 +31,7 @@ app.innerHTML=`<section class="hero mv"><p class="eyebrow">Most Viewed Clip of t
 <div class="grid">${trend.map((c,i)=>`<a class="card" data-clip="${c.id}" href="#/show/${c.showId}">${thumb(c)}<div class="meta"><b>#${i+1} ${c.artist.name}</b><span class="mut">“${esc0(c.song)}” · ${c.city}</span><br><span class="trend">▲ ${trendOf(c).toLocaleString("en-US")}/day</span> ${credit(c)}</div></a>`).join("")}</div>`;}
 function artist(id){const a=ARTISTS.find(x=>x.id==id);if(!a)return home();const list=SHOWS.filter(s=>s.artist==a);
 const cities=[...new Set(list.map(s=>s.city))];
-app.innerHTML=`<div class="ahead"><div class="avatar" style="${grad(a.hue)}"></div><div><span class="mut">${a.genre} · example artist</span><h1>${a.name}</h1><p class="mut">${list.length} recent shows · ${list.reduce((n,s)=>n+s.clips.length,0)} fan clips indexed</p><button class="btn" id="fb"></button></div></div>
+app.innerHTML=`<div class="ahead"><div class="avatar" style="${grad(a.hue)}"></div><div><span class="mut">${a.genre}</span><h1>${a.name}</h1><p class="mut">${list.length} recent shows · ${list.reduce((n,s)=>n+s.clips.length,0)} fan clips indexed</p><button class="btn" id="fb"></button></div></div>
 <h2>Recent shows</h2><div class="filters"><select id="fc"><option value="">All cities</option>${cities.map(c=>`<option>${c}</option>`).join("")}</select><select id="fs"><option value="new">Newest first</option><option value="old">Oldest first</option><option value="clips">Most clips</option></select></div><div id="sl"></div>`;
 const fb=$("#fb"),upd=()=>{fb.textContent=follows.has(id)?"✓ Following":"+ Follow";fb.className=follows.has(id)?"btn ghost":"btn"};upd();
 fb.onclick=()=>{follows.has(id)?follows.delete(id):follows.add(id);localStorage.setItem("ssf",JSON.stringify([...follows]));upd()};

@@ -44,10 +44,7 @@ document.querySelectorAll(`[data-slot="${slotId}"]:not(.preview)`).forEach(x=>x.
   ["Playwire: music sites draw ticketing/streaming/merch demand; direct entertainment deals far above programmatic","https://www.playwire.com/entertainment-website-ad-revenue-guide"],
   ["MRC Viewable Ad Impression Guidelines: 50% of pixels for 1 continuous second","https://www.mediaratingcouncil.org/sites/default/files/Standards/081815%20Viewable%20Ad%20Impression%20Guideline_v2.0_Final.pdf"],
   ["Coalition for Better Ads: mobile large sticky ads & >30% ad density fail the standard","https://www.betterads.org/standards/"]];
- const SAMPLE={"home-native":{advertiser:"Encore Audio (example)",headline:"Earplugs made for the pit",body:"High-fidelity earplugs that keep the mix and save your hearing.",cta_label:"Learn more"},
-  "show-tickets":{advertiser:"StubRiver Tickets (example)",headline:"Metallica: next show Nov 18 · Sphere",body:"Seats from $39. Official resale, fees shown up front.",cta_label:"Find tickets"},
-  "artist-merch":{advertiser:"MerchHaus (example)",headline:"Official Billy Strings tour tees & vinyl",body:"Free shipping over $50.",cta_label:"Shop merch"},
-  "clip-companion":{advertiser:"Pedalworks (example)",headline:"Get that Turnstile guitar tone",body:"Fuzz & reverb pedals from $79.",cta_label:"Shop pedals"}};
+ const SAMPLE=Object.fromEntries(SLOTS.map(s=>[s.id,{advertiser:"Your brand",headline:"Your headline here",body:"A short line about your offer, up to 180 characters.",cta_label:"Your CTA"}]));
  const price=s=>s.pricing_model=="cpm"?`from <b>$${Number(s.base_cpm_usd).toFixed(0)} CPM</b>${s.flat_price_usd?` · or <b>$${Number(s.flat_price_usd).toFixed(0)}/week</b> flat`:""}`:`from <b>$${Number(s.flat_price_usd).toFixed(0)}</b>`;
  api.page=()=>{const app=document.getElementById("app"),srcv=ALL_CLIPS.reduce((n,c)=>n+(c.source_views||0),0);
   app.innerHTML=`<section class="adv-hero"><p class="eyebrow">Advertise with Showstopper</p><h1>Reach fans while they relive the show.</h1>

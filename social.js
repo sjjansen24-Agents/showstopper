@@ -1,27 +1,14 @@
-/* Showstopper social layer — FRONT-END DEMO ONLY. Everything lives in this browser's localStorage.
-   Passwords are SHA-256 hashed locally for the demo; nothing is sent anywhere. Seeded members are EXAMPLE DATA. */
+/* Showstopper social layer. Uses Supabase (social-supabase.js) when connected; otherwise falls back to this browser's localStorage.
+   Starts empty: no seeded members, comments, messages or watch history. */
 const SOC=(()=>{
-const K="ss_social_live_v1",NOW=new Date(2026,9,19,14,0).getTime(),DAY=864e5,esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const K="ss_social_v2",NOW=Date.now(),DAY=864e5,esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const clipById=id=>ALL_CLIPS.find(c=>c.id==id),ago=t=>{const m=Math.round((Date.now()-t)/6e4);return m<1?"just now":m<60?m+"m ago":m<1440?Math.round(m/60)+"h ago":Math.round(m/1440)+"d ago"};
-let S=JSON.parse(localStorage.getItem(K)||"null");
-function seed(){const u=(h,n,hue,bio,tr)=>({handle:h,name:n,hue,bio,email:h+"@example.test",pw:"demo",tracked:tr,lists:[],seen:[],example:true,joined:NOW-40*DAY});
- S={me:null,users:{juno:u("juno","Juno Park",320,"Front-row lifer. Synth rock and anything loud. (example member)",["goose","billy-strings"]),
- theo:u("theo","Theo Marsh",190,"Folk nights and festival mornings. (example member)",["billy-strings"]),
- rae:u("rae","Rae Okafor",30,"I film from the rail so you don't have to. (example member)",["goose"])},
- comments:{},msgs:[],watch:{},likes:{}};
- let n=1;const c=(key,user,text,hrs,likes,parent)=>{const id="c"+n++;(S.comments[key]=S.comments[key]||[]).push({id,user,text,t:NOW-hrs*36e5,likes,parent:parent||null});return id};
- SHOWS.forEach((s,i)=>{const k="show:"+s.id,a=c(k,"juno",`That best clip is unreal. Best audio I've heard from ${s.city}.`,30+i,12+i);
-  const b=c(k,"rae","Same — the audio on this upload is great. (example comment)",28+i,5,a);c(k,"theo","Saving this one for the drive home.",20+i,2,b);
-  c(k,"theo",`Wish I'd been at ${s.venue}. Setlist looks perfect.`,10+i,4);
-  c("clip:"+s.best.id,"rae","This upload deserves more views. (example comment)",15+i,9);});
- S.msgs.push({from:"juno",to:"theo",text:"Did you catch the Velvet Tide set in Chicago?",t:NOW-50*36e5,read:true},{from:"theo",to:"juno",text:"Only the clips! The best one is on Showstopper already.",t:NOW-48*36e5,read:true},{from:"juno",to:"theo",text:"Saving it to my road-trip list 🎶",t:NOW-47*36e5,read:true});
- save();}
+localStorage.removeItem("ss_social_live_v1");let S=JSON.parse(localStorage.getItem(K)||"null");
+function seed(){S={me:null,users:{},comments:{},msgs:[],watch:{},likes:{}};save()}
 function save(){localStorage.setItem(K,JSON.stringify(S))}
 if(!S)seed();
 const me=()=>S.me&&S.users[S.me];
 async function hash(p){try{const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("ss:"+p));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}catch(e){return "plain:"+p}}
-function seedWatch(h){let r=h.length*7;const R=()=>(r=(r*9301+49297)%233280)/233280,log=[];
- for(let d=0;d<30;d++){const n=Math.floor(R()*4+(d<7?2:0));for(let j=0;j<n;j++){const c=ALL_CLIPS[Math.floor(R()*ALL_CLIPS.length)];log.push({clip:c.id,t:NOW-d*DAY-j*36e5,secs:60+Math.floor(R()*240),seeded:true})}}S.watch[h]=log}
 /* ---------- UI helpers ---------- */
 function modal(html){closeModal();const m=document.createElement("div");m.className="modal";m.innerHTML=`<div class="mbox" role="dialog"><button class="mx" aria-label="Close">×</button>${html}</div>`;
  m.onclick=e=>{if(e.target==m||e.target.classList.contains("mx"))closeModal()};document.body.appendChild(m);return m}
@@ -29,9 +16,9 @@ function closeModal(){document.querySelectorAll(".modal").forEach(m=>m.remove())
 function gate(why){if(me())return true;const m=modal(`<h2>Join free to ${why}</h2><p>Showstopper is free forever. Make an account to save clips, track artists, comment, and message other fans.</p><div class="mrow"><button class="btn" id="g1">Sign up free</button><button class="btn ghost" id="g2">Log in</button></div>`);
  m.querySelector("#g1").onclick=()=>authModal("up");m.querySelector("#g2").onclick=()=>authModal("in");return false}
 function avatar(u,size=40){return `<span class="av" style="width:${size}px;height:${size}px;font-size:${size*.42}px;background:linear-gradient(135deg,hsl(${u.hue} 85% 55%),hsl(${(u.hue+60)%360} 70% 30%))">${esc(u.name[0])}</span>`}
-function authModal(mode){const up=mode=="up",m=modal(`<h2>${up?"Create your free account":"Welcome back"}</h2><p class="demo-note">Demo only: your account is stored in this browser (localStorage) and never sent anywhere. Don't use a real password.</p>
-<form id="af">${up?'<label>Display name<input name="name" required maxlength="40" placeholder="e.g. Sky Rivera"></label>':""}<label>Email<input name="email" type="email" required placeholder="you@example.test"></label><label>Password<input name="pw" type="password" required minlength="4" placeholder="demo password"></label>
-<p class="err" id="ae"></p><button class="btn">${up?"Sign up free":"Log in"}</button></form><p class="mut">${up?'Already a member? <a href="#" id="sw">Log in</a>':'New here? <a href="#" id="sw">Sign up free</a>'} · Example members: juno / theo / rae @example.test, password "demo"</p>`);
+function authModal(mode){const up=mode=="up",m=modal(`<h2>${up?"Create your free account":"Welcome back"}</h2>${window.SSB&&SSB.enabled?"":'<p class="demo-note">Our account service is offline right now, so this account will be saved in this browser only.</p>'}
+<form id="af">${up?'<label>Display name<input name="name" required maxlength="40" placeholder="e.g. Sky Rivera"></label>':""}<label>Email<input name="email" type="email" required placeholder="you@example.com"></label><label>Password<input name="pw" type="password" required minlength="6" placeholder="At least 6 characters"></label>
+<p class="err" id="ae"></p><button class="btn">${up?"Sign up free":"Log in"}</button></form><p class="mut">${up?'Already a member? <a href="#" id="sw">Log in</a>':'New here? <a href="#" id="sw">Sign up free</a>'}</p>`);
  m.querySelector("#sw").onclick=e=>{e.preventDefault();authModal(up?"in":"up")};
  m.querySelector("#af").onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target),email=f.get("email").trim().toLowerCase(),pw=await hash(f.get("pw"));
   let u=Object.values(S.users).find(x=>x.email==email);
@@ -39,9 +26,8 @@ function authModal(mode){const up=mode=="up",m=modal(`<h2>${up?"Create your free
   if(up){if(u)return m.querySelector("#ae").textContent="That email already has an account. Try logging in.";
    let h=f.get("name").toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,16)||"fan";while(S.users[h])h+=Math.floor(Math.random()*9);
    u=S.users[h]={handle:h,name:f.get("name").trim(),hue:Math.floor(Math.random()*360),bio:"",email,pw,tracked:[],lists:[{id:"l1",name:"Watch later",clips:[]}],seen:[],joined:Date.now()};
-   seedWatch(h);S.msgs.push({from:"juno",to:h,text:`Hey ${u.name}, welcome to Showstopper! Track a few artists and you'll get pinged when new shows drop. (example message)`,t:Date.now()-6e4,read:false});
   }else{if(!u&&window.SSB&&SSB.enabled&&SSB.user){const h=email.split("@")[0].replace(/[^a-z0-9]/g,"");u=S.users[h]=S.users[h]||{handle:h,name:h,hue:200,bio:"",email,pw,tracked:[],lists:[{id:"l1",name:"Watch later",clips:[]}],seen:[],joined:Date.now()}}
-   if(!u||(u.pw!=pw&&!(u.example&&f.get("pw")=="demo")&&!(window.SSB&&SSB.enabled&&SSB.user)))return m.querySelector("#ae").textContent="Email or password doesn't match.";if(!S.watch[u.handle])seedWatch(u.handle)}
+   if(!u||(u.pw!=pw&&!(window.SSB&&SSB.enabled&&SSB.user)))return m.querySelector("#ae").textContent="Email or password doesn't match."}
   S.me=u.handle;save();closeModal();header();route()}}
 /* ---------- notifications ---------- */
 function alerts(){const u=me();if(!u)return[];return SHOWS.filter(s=>u.tracked.includes(s.artist.id)).sort((a,b)=>b.date-a.date).map(s=>({id:s.id,text:`New show from ${s.artist.name}`,sub:`${s.venue} · ${s.city} · ${fmt(s.date)}`,t:s.date.getTime()+20*36e5}))}
@@ -67,7 +53,7 @@ function saveModal(cid){if(!gate("save clips"))return;const u=me(),c=clipById(ci
 function commentsHTML(key){return `<section class="comments" data-key="${key}"><h2>Comments</h2><form class="cform" data-parent=""><textarea name="t" placeholder="${me()?"Add a comment…":"Sign in to join the conversation"}" required maxlength="500"></textarea><button class="btn">Post</button></form><div class="clist"></div></section>`}
 function drawComments(sec){const key=sec.dataset.key,list=S.comments[key]||[],lk=S.likes[S.me]||[];
  const node=(c,depth)=>{const u=S.users[c.user]||{name:c.user,hue:0,handle:c.user},kids=list.filter(x=>x.parent==c.id);
-  return `<div class="cm" style="--d:${depth}">${avatar(u,36)}<div class="cb"><a href="#/profile/${u.handle}"><b>${esc(u.name)}</b></a> <span class="mut">· ${ago(c.t)}${u.example?" · example":""}</span><p>${esc(c.text)}</p>
+  return `<div class="cm" style="--d:${depth}">${avatar(u,36)}<div class="cb"><a href="#/profile/${u.handle}"><b>${esc(u.name)}</b></a> <span class="mut">· ${ago(c.t)}</span><p>${esc(c.text)}</p>
   <div class="ca"><button data-like="${c.id}" class="${lk.includes(c.id)?"on":""}">♥ ${c.likes+(lk.includes(c.id)?1:0)}</button>${depth<3?`<button data-reply="${c.id}">Reply</button>`:""}</div><div class="rf"></div>${kids.map(k=>node(k,depth+1)).join("")}</div></div>`};
  sec.querySelector(".clist").innerHTML=list.filter(c=>!c.parent).sort((a,b)=>b.t-a.t).map(c=>node(c,0)).join("")||'<p class="mut">Be the first to comment.</p>';
  sec.querySelectorAll("[data-like]").forEach(b=>b.onclick=()=>{if(!gate("like comments"))return;const l=S.likes[S.me]=S.likes[S.me]||[],i=l.indexOf(b.dataset.like);i<0?l.push(b.dataset.like):l.splice(i,1);save();drawComments(sec)});
@@ -82,7 +68,7 @@ function mountComments(){document.querySelectorAll(".comments").forEach(sec=>{bi
 /* ---------- ads (made-up vendors) ---------- */
 const ad=(cls,title,body,cta)=>`<aside class="ad ${cls}"><span class="spons">Sponsored</span><div><b>${title}</b><p>${body}</p></div><span class="btn sm">${cta}</span></aside>`;
 /* ---------- watch log ---------- */
-function sitePlays(id){if(window.SSB&&SSB.enabled){const r=SSB.sitePlays(id);if(r!=null)return r}let n=(S.anon||{})[id]||0;Object.values(S.watch||{}).forEach(l=>l.forEach(x=>{if(x.clip==id&&!x.seeded)n++}));return n}
+function sitePlays(id){if(window.SSB&&SSB.enabled){const r=SSB.sitePlays(id);if(r!=null)return r}let n=(S.anon||{})[id]||0;Object.values(S.watch||{}).forEach(l=>l.forEach(x=>{if(x.clip==id)n++}));return n}
 function refreshViewLabels(id){const c=clipById(id);if(!c)return;document.querySelectorAll(`[data-tv="${CSS.escape(id)}"]`).forEach(e=>{e.textContent=totalViews(c).toLocaleString("en-US");e.title=viewsTip(c)});document.querySelectorAll(`[data-tvb="${CSS.escape(id)}"]`).forEach(e=>e.textContent=viewsTip(c))}
 function play(cid){const c=clipById(cid);if(!c)return;window.SSB&&SSB.enabled&&SSB.recordPlay(cid);
  if(!me()){S.anon=S.anon||{};S.anon[cid]=(S.anon[cid]||0)+1;save();refreshViewLabels(cid);return}(S.watch[S.me]=S.watch[S.me]||[]).push({clip:cid,t:Date.now(),secs:(+c.len.split(":")[0])*60+(+c.len.split(":")[1])});save();
@@ -97,13 +83,13 @@ function profile(h){const u=S.users[h];if(!u){app.innerHTML='<p class="empty">Me
  let an="";if(own){const log=(S.watch[h]||[]),secs=log.reduce((n,x)=>n+x.secs,0),cnt={},gen={};log.forEach(x=>{const c=clipById(x.clip);if(!c)return;cnt[c.artist.name]=(cnt[c.artist.name]||0)+1;gen[c.artist.genre]=(gen[c.artist.genre]||0)+1});
   const top=o=>Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0,3),days=Array.from({length:30},(_,i)=>{const s=new Date(NOW-(29-i)*DAY);s.setHours(0,0,0,0);const e=s.getTime()+DAY;return log.filter(x=>x.t>=s.getTime()&&(i==29||x.t<e)).length});
   const mx=Math.max(...days,1),W=600,H=160,pts=days.map((v,i)=>`${(i/29*W).toFixed(1)},${(H-10-v/mx*(H-30)).toFixed(1)}`).join(" ");
-  an=`<section class="panel analytics"><h2>Your analytics <span class="mut" style="font-size:15px;font-weight:400">· only you can see this · includes seeded example history</span></h2>
+  an=!log.length?`<section class="panel analytics empty-an"><h2>Your analytics <span class="mut" style="font-size:15px;font-weight:400">· only you can see this</span></h2><p>Nothing here yet. Press play on any show and your watch time, top artists and top genres will show up here.</p><a class="btn sm" href="#/">Find a show to watch →</a></section>`:`<section class="panel analytics"><h2>Your analytics <span class="mut" style="font-size:15px;font-weight:400">· only you can see this</span></h2>
   <div class="stats"><div><b>${log.length}</b><span>clips watched</span></div><div><b>${Math.floor(secs/3600)}h ${Math.round(secs%3600/60)}m</b><span>watch time</span></div><div><b>${top(cnt)[0]?.[0]||"—"}</b><span>top artist</span></div><div><b>${top(gen)[0]?.[0]||"—"}</b><span>top genre</span></div></div>
   <div class="two2"><div><h3>Views, last 30 days</h3><svg viewBox="0 0 ${W} ${H}" class="chart" role="img" aria-label="Views per day over the last 30 days"><defs><linearGradient id="cg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#ff3b7a" stop-opacity=".55"/><stop offset="1" stop-color="#ff3b7a" stop-opacity="0"/></linearGradient></defs>
   ${[0,.5,1].map(f=>`<line x1="0" x2="${W}" y1="${H-10-f*(H-30)}" y2="${H-10-f*(H-30)}" stroke="#ffffff1a"/><text x="4" y="${H-14-f*(H-30)}" fill="#cbb" font-size="13">${Math.round(f*mx)}</text>`).join("")}
   <polygon points="0,${H-10} ${pts} ${W},${H-10}" fill="url(#cg)"/><polyline points="${pts}" fill="none" stroke="#ff3b7a" stroke-width="3"/></svg><div class="axis mut"><span>30 days ago</span><span>Today</span></div></div>
   <div><h3>Top artists</h3><ol>${top(cnt).map(([n,v])=>`<li>${n} <span class="mut">${v} plays</span></li>`).join("")}</ol><h3>Top genres</h3><ol>${top(gen).map(([n,v])=>`<li>${n} <span class="mut">${v}</span></li>`).join("")}</ol></div></div></section>`}
- app.innerHTML=`<div class="ahead">${avatar(u,120)}<div><span class="mut">@${u.handle}${u.example?" · example member":""} · free member</span><h1>${esc(u.name)}</h1>
+ app.innerHTML=`<div class="ahead">${avatar(u,120)}<div><span class="mut">@${u.handle} · free member</span><h1>${esc(u.name)}</h1>
  <div id="bio"><p class="bio">${u.bio?esc(u.bio):'<span class="mut">No bio yet.</span>'}</p>${own?'<button class="btn ghost sm" id="eb">Edit bio</button>':""}</div>
  ${!own?`<button class="btn" id="msgb">✉️ Message</button>`:""}</div></div>${an}
  <h2>Tracked artists</h2><div class="chips">${u.tracked.map(id=>ARTISTS.find(a=>a.id==id)).filter(Boolean).map(artistChip).join("")||'<span class="mut">Not tracking anyone yet.</span>'}</div>
