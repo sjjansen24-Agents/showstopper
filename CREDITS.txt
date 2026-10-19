@@ -1,0 +1,10 @@
+Showstopper "floor-view" theme — image credits
+
+Background photo: "Crowd watching a vibrant concert stage with bright lights"
+Photographer: Howen (@oweni) — https://unsplash.com/@oweni
+Source: https://unsplash.com/photos/crowd-watching-a-vibrant-concert-stage-with-bright-lights-bo8XlhXNrE8
+License: Unsplash License — https://unsplash.com/license (free for commercial and non-commercial use; attribution appreciated, not required)
+File: stage.webp (downloaded and stored locally, 1920px WebP, not hotlinked)
+
+Crowd silhouette layer: original inline SVG drawn for this project.
+All artists, venues, and clips on the site are fictional example data.
