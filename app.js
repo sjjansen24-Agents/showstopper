@@ -2,7 +2,8 @@ const $=s=>document.querySelector(s),app=$("#app");
 const fmt=d=>d.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
 const iso=d=>d.toISOString().slice(0,10);
 const follows=new Set(JSON.parse(localStorage.getItem("ssf")||"[]"));
-const grad=h=>`background:linear-gradient(135deg,hsl(${h} 90% 45%),hsl(${(h+60)%360} 80% 20%) 60%,#05050a),radial-gradient(circle at 70% 20%,#fff4,transparent 40%)`;
+const nh=h=>(h>=290||h<=20)?145:h; // red/pink hues -> Showstopper green
+const grad=h=>(h=nh(h),0)||`background:linear-gradient(135deg,hsl(${h} 90% 45%),hsl(${(h+60)%360} 80% 20%) 60%,#05050a),radial-gradient(circle at 70% 20%,#fff4,transparent 40%)`;
 const thumb=(c,best)=>`<div class="thumb" style="${c.thumb?`background:#000 url(${c.thumb}) center/cover`:grad(c.hue)}"><div class="play"></div>${best?'<span class="badge best">★ Best clip</span>':''}<span class="badge">${c.len}</span></div>`;
 const creditFull=c=>`<span class="src">via ${c.platform}</span> <span class="mut">by ${c.uploader_url?`<a href="${c.uploader_url}" target="_blank" rel="noopener" style="text-decoration:underline">${esc0(c.uploader)}</a>`:esc0(c.uploader)}</span>${c.url?` · <a class="srcl" href="${c.url}" target="_blank" rel="noopener">Watch on ${c.platform} ↗</a>`:""}`;
 const credit=c=>`<span class="src">via ${c.platform}</span> <span class="mut">by ${esc0(c.uploader)}</span>`;
@@ -14,8 +15,8 @@ const nviews=c=>`<span class="tv" data-tv="${c.id}" title="${viewsTip(c)}">${tot
 const trendOf=c=>Math.round(totalViews(c)/Math.max(c.age_days||1,1));
 const embed=(c,best)=>c.embed?`<div class="embed-wrap">${best?'<span class="badge best">★ Best clip</span>':''}<iframe src="${c.embed}${c.platform=="YouTube"?"?rel=0&modestbranding=1":""}" title="${esc0(c.song)} — ${c.platform} embed" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>`:thumb(c,best);
 const showCard=s=>`<a class="card" href="#/show/${s.id}">${thumb(s.best,1)}<div class="meta"><b>${s.artist.name}</b><span class="mut">${[s.venue,s.city].filter(Boolean).join(" · ")}</span><br><span class="mut">${fmt(s.date)}</span> · ${credit(s.best)}</div></a>`;
-const artistAvatar=(a,size=28)=>a.thumb?`<img class="aav" src="${esc0(a.thumb)}" alt="" referrerpolicy="no-referrer" width="${size}" height="${size}" loading="lazy" style="width:${size}px;height:${size}px" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'aav ini',style:'width:${size}px;height:${size}px;font-size:${Math.round(size*.45)}px;background:hsl(${a.hue} 70% 40%)',textContent:'${esc0(a.name[0])}'}))">`:`<span class="aav ini" style="width:${size}px;height:${size}px;font-size:${Math.round(size*.45)}px;background:linear-gradient(135deg,hsl(${a.hue} 80% 50%),hsl(${(a.hue+60)%360} 70% 25%))">${esc0(a.name.replace(/^The /,"")[0])}</span>`;
-const artistChip=a=>`<a class="chip achip" href="#/artist/${a.id}" style="border-color:hsl(${a.hue} 80% 55%)">${artistAvatar(a,26)}${esc0(a.name)}</a>`;
+const artistAvatar=(a,size=28)=>a.thumb?`<img class="aav" src="${esc0(a.thumb)}" alt="" referrerpolicy="no-referrer" width="${size}" height="${size}" loading="lazy" style="width:${size}px;height:${size}px" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'aav ini',style:'width:${size}px;height:${size}px;font-size:${Math.round(size*.45)}px;background:hsl(${nh(a.hue)} 70% 40%)',textContent:'${esc0(a.name[0])}'}))">`:`<span class="aav ini" style="width:${size}px;height:${size}px;font-size:${Math.round(size*.45)}px;background:linear-gradient(135deg,hsl(${nh(a.hue)} 80% 50%),hsl(${(nh(a.hue)+60)%360} 70% 25%))">${esc0(a.name.replace(/^The /,"")[0])}</span>`;
+const artistChip=a=>`<a class="chip achip" href="#/artist/${a.id}" style="border-color:hsl(${nh(a.hue)} 80% 55%)">${artistAvatar(a,26)}${esc0(a.name)}</a>`;
 const HAS30=typeof HIST_DAYS!="undefined"&&HIST_DAYS>=28;
 const site30=c=>{const r=window.SSB&&SSB.remoteTotals&&SSB.remoteTotals[c.id];return r&&r.site_30d!=null?Number(r.site_30d):0};
 const gain30=c=>(c.views_30d||0)+site30(c);
