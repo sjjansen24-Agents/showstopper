@@ -38,7 +38,9 @@ function header(){const el=document.getElementById("acct"),u=me();if(!el)return;
  el.innerHTML=`<button class="ib" id="bell" aria-label="Notifications">🔔${un?`<i class="cnt">${un}</i>`:""}</button><a class="ib" href="#/messages" aria-label="Messages">✉️${um?`<i class="cnt">${um}</i>`:""}</a><button class="ib avb" id="avm">${avatar(u,34)}</button>`;
  el.querySelector("#bell").onclick=e=>{e.stopPropagation();drop(`<h3>Notifications</h3>${al.length?al.map(a=>`<a class="ni ${u.seen.includes(a.id)?"":"unread"}" href="#/show/${a.id}"><b>${a.text}</b><span class="mut">${a.sub}</span></a>`).join(""):'<p class="mut">Track artists to get new-show alerts.</p>'}<button class="btn ghost sm" id="mar">Mark all read</button>`);
   document.getElementById("mar").onclick=()=>{u.seen=al.map(a=>a.id);save();header();closeDrop()}};
- el.querySelector("#avm").onclick=e=>{e.stopPropagation();drop(`<div class="dm">${avatar(u,44)}<div><b>${esc(u.name)}</b><br><span class="mut">@${u.handle}</span></div></div><a class="ni" href="#/profile/${u.handle}">My profile & lists</a><a class="ni" href="#/messages">Messages</a><button class="ni" id="lo">Log out</button>`);
+ el.querySelector("#avm").onclick=async e=>{e.stopPropagation();
+  let an="";try{if(window.SS_ANALYTICS&&await SS_ANALYTICS.checkAdmin())an=`<a class="ni" href="#/analytics">Site analytics</a>`}catch(x){}
+  drop(`<div class="dm">${avatar(u,44)}<div><b>${esc(u.name)}</b><br><span class="mut">@${u.handle}</span></div></div><a class="ni" href="#/profile/${u.handle}">My profile & lists</a><a class="ni" href="#/messages">Messages</a>${an}<button class="ni" id="lo">Log out</button>`);
   document.getElementById("lo").onclick=()=>{window.SSB&&SSB.enabled&&SSB.signOut();S.me=null;save();closeDrop();header();route()}}}
 function drop(html){closeDrop();const d=document.createElement("div");d.className="drop";d.innerHTML=html;d.onclick=e=>e.stopPropagation();document.body.appendChild(d)}
 function closeDrop(){document.querySelectorAll(".drop").forEach(d=>d.remove())}
@@ -110,10 +112,10 @@ function messages(withH){if(!me()){app.innerHTML='<h1>Messages</h1><p class="emp
  const f=app.querySelector("#mf");if(f)f.onsubmit=e=>{e.preventDefault();const txt=f.t.value.trim();S.msgs.push({from:S.me,to:cur,text:txt,t:Date.now(),read:false});save();window.SSB&&SSB.enabled&&SSB.sendMessage(cur,txt).catch(e=>console.warn("[SSB]",e.message));messages(cur)};
  const ms=app.querySelector(".msgs");if(ms)ms.scrollTop=1e6;return true}
 /* ---------- route hooks ---------- */
-function routeHook(p,id){return p=="advertise"?(window.ADS?ADS.page():false):p=="clip"?clipPage(id):p=="profile"?profile(id):p=="messages"?messages(id):false}
+function routeHook(p,id){return p=="advertise"?(window.ADS?ADS.page():false):p=="analytics"?(window.SS_ANALYTICS?SS_ANALYTICS.page():false):p=="clip"?clipPage(id):p=="profile"?profile(id):p=="messages"?messages(id):false}
 let playedThisView=new Set();addEventListener("hashchange",()=>playedThisView=new Set());
 addEventListener("blur",()=>setTimeout(()=>{const f=document.activeElement;if(f&&f.tagName=="IFRAME"){const w=f.closest(".player");const cb=w&&w.nextElementSibling;const id=cb&&cb.dataset.clip;if(id&&!playedThisView.has(id)){playedThisView.add(id);play(id)}}},0));
-function after(p,id){header();if(window.SSB)SSB.ready.then(ok=>{if(ok)SSB.loadTotals([...new Set([...document.querySelectorAll("[data-tv]")].map(e=>e.dataset.tv))])});
+function after(p,id){try{window.SS_ANALYTICS&&SS_ANALYTICS.track()}catch(e){};header();if(window.SSB)SSB.ready.then(ok=>{if(ok)SSB.loadTotals([...new Set([...document.querySelectorAll("[data-tv]")].map(e=>e.dataset.tv))])});
  document.querySelectorAll("[data-clip]").forEach(el=>{if(el.querySelector(".savebtn"))return;const b=document.createElement("button");b.className="savebtn";b.textContent="＋ Save";b.onclick=e=>{e.preventDefault();e.stopPropagation();saveModal(el.dataset.clip)};el.style.position="relative";el.appendChild(b)});
  document.querySelectorAll("[data-play] .play").forEach(pl=>{pl.style.cursor="pointer";pl.onclick=e=>{e.preventDefault();e.stopPropagation();play(pl.closest("[data-play]").dataset.play)}});
  if(p=="show"){const s=SHOWS.find(x=>x.id==id);if(!s)return;const next=new Date(s.date.getTime()+46*DAY);

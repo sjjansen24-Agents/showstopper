@@ -109,3 +109,15 @@ body::before{display:none}
 .navsearch{display:inline-block;margin-right:14px}.navsearch input{width:190px;padding:8px 14px;border-radius:999px;background:#ffffff12;border:1px solid #ffffff26;color:#fff;font:inherit;font-size:15px}
 .tip{cursor:help;font-weight:400;letter-spacing:0;opacity:.85}.credit a{text-decoration:underline}
 @media(max-width:760px){.navsearch{display:block;margin:6px 0}.navsearch input{width:100%}.alist{grid-template-columns:1fr}}
+
+/* Site analytics (admin) */
+.an-range{display:flex;gap:8px;margin-top:18px}.an-range .btn.on{background:linear-gradient(#a6ffcb,#3fd98a);color:#04140a;border-color:transparent}
+.an-stats{margin:22px 0}
+.an-bars{display:flex;align-items:flex-end;gap:4px;height:140px;padding:8px 0 0;overflow-x:auto}
+.an-bar{flex:1;min-width:18px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.an-bar i{display:block;width:100%;background:linear-gradient(#a6ffcb,#3fd98a);border-radius:4px 4px 0 0;min-height:4px}
+.an-bar span{font-size:10px;color:var(--mut);margin-top:4px;writing-mode:horizontal-tb}
+.an-two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+@media(max-width:800px){.an-two{grid-template-columns:1fr}}
+.an-table code{font-size:13px;color:#c4ffdc}
+.an-admin-link{font-size:13px;opacity:.7;margin-left:10px}

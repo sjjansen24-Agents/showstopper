@@ -65,7 +65,7 @@ document.querySelectorAll(`[data-slot="${slotId}"]:not(.preview)`).forEach(x=>x.
   <tr><td>Clip-page companion</td><td>$8 CPM</td><td>Compact unit lower on the page; priced near native midpoint [2].</td></tr></table>
   <p class="mut small">Minimum campaign $250. Impressions count only when ≥50% of the ad is on screen for 1 continuous second [5]; clicks deduped per viewer per day. Final pricing depends on audience data after launch. Placements follow the Better Ads Standards [6].</p>
   <ol class="srcs">${SRC.map(([t,u])=>`<li><a href="${u}" target="_blank" rel="noopener">${esc(t)}</a></li>`).join("")}</ol></div>
-  <h2>Get in touch</h2><form id="adq" class="panel adq"><div class="g2"><label>Name<input name="name" required maxlength="120"></label><label>Work email<input name="email" type="email" required maxlength="200"></label>
+  <p class="mut small" id="an-admin-slot" hidden><a class="an-admin-link" href="#/analytics">Site analytics (admins)</a></p><h2>Get in touch</h2><form id="adq" class="panel adq"><div class="g2"><label>Name<input name="name" required maxlength="120"></label><label>Work email<input name="email" type="email" required maxlength="200"></label>
   <label>Company<input name="company" maxlength="160"></label><label>Budget<select name="budget"><option value="">Choose…</option><option>Under $1k</option><option>$1k–5k</option><option>$5k–25k</option><option>$25k+</option></select></label></div>
   <fieldset><legend>Interested in</legend>${api.slots.map(s=>`<label class="lrow"><input type="checkbox" name="slots" value="${s.id}"> ${esc(s.name)}</label>`).join("")}</fieldset>
   <label>Message<textarea name="message" maxlength="2000" placeholder="Artists, cities, dates, goals…"></textarea></label><input name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
@@ -74,5 +74,5 @@ document.querySelectorAll(`[data-slot="${slotId}"]:not(.preview)`).forEach(x=>x.
    await api.ready;if(!(window.SSB&&SSB.enabled)){msg.textContent="Couldn't send: the inquiry service isn't connected. Please try again later.";return}
    const {data,error}=await SSB.client.rpc("submit_ad_inquiry",{p_name:f.name.value,p_email:f.email.value,p_company:f.company.value,p_budget:f.budget.value,p_slots:[...f.querySelectorAll("[name=slots]:checked")].map(x=>x.value),p_message:f.message.value});
    if(error){msg.textContent=/rate limited/.test(error.message)?"Too many inquiries from this network. Please try again in an hour.":/function|schema|404/i.test(error.message+error.code)?"Couldn't send: the inquiry service isn't set up yet.":"Couldn't send: "+error.message;return}
-   api.lastInquiry=data;f.reset();msg.className="ok";msg.textContent="Thanks! We'll reply within 2 business days."}; return true};
+   api.lastInquiry=data;f.reset();msg.className="ok";msg.textContent="Thanks! We'll reply within 2 business days."}; (async()=>{if(window.SS_ANALYTICS&&await SS_ANALYTICS.checkAdmin()){const el=document.getElementById("an-admin-slot");if(el)el.hidden=false}})(); return true};
  return api})();
